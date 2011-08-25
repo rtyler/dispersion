@@ -30,25 +30,23 @@ package body Callbacks is
             use Ada.Streams,
                 AWS.Messages;
 
-            Connection : AWS.Client.HTTP_Connection;
             Hostname : constant String := AWS.Headers.Get_Values (Headers, "Host");
             URL : constant String := "http://" & Hostname & AWS.Status.URI (Request);
             Method : constant AWS.Status.Request_Method := AWS.Status.Method (Request);
 
             Result : AWS.Response.Data;
-            Message_Body : AWS.Status.Stream_Element_Array (1 .. 10_000);
-            Last : AWS.Status.Stream_Element_Offset;
         begin
             Put_Line ("Should proxy " & URL);
 
-            AWS.Client.Create (Connection, URL);
-
-            AWS.Client.Get (Connection, Result);
-            Put_Line ("Status: " & AWS.Messages.Image (AWS.Response.Status_Code (Result)));
+            Result := AWS.Client.Get (URL => URL,
+                                      Follow_Redirection => True);
 
             declare
                 Buf : constant String := AWS.Response.Message_Body (Result);
+                Code : constant AWS.Messages.Status_Code := AWS.Response.Status_Code (Result);
             begin
+                Put_Line ("Status: " & AWS.Messages.Image (Code));
+
                 return AWS.Response.Build (AWS.Response.Content_Type (Result),
                                            Buf);
             end;

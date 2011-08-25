@@ -20,14 +20,14 @@ begin
 
     AWS.Server.Start (Web_Server     => Server,
                       Name           => "Dispersion Proxy",
-                      Max_Connection => 1,
+                      Max_Connection => 5,
                       Port           => 8980,
                       Callback       => Callbacks.Simple'Access);
 
     Put_Line ("Press 'q' to quit..");
+
     AWS.Server.Wait (Mode => AWS.Server.Q_Key_Pressed);
 
     Put_Line ("Shutting down..");
     AWS.Server.Shutdown (Web_Server => Server);
-    delay 2.0;
 end Dispersion;
