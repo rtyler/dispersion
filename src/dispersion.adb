@@ -16,7 +16,7 @@ procedure Dispersion is
     Server : AWS.Server.HTTP;
 
 begin
-    Put_Line ("Starting Dispersion..");
+    Put_Line ("Starting Dispersion on port 8980..");
 
     AWS.Server.Start (Web_Server     => Server,
                       Name           => "Dispersion Proxy",
