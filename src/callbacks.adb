@@ -35,23 +35,40 @@ package body Callbacks is
             Method : constant AWS.Status.Request_Method := AWS.Status.Method (Request);
 
             Result : AWS.Response.Data;
+            Response_Code : AWS.Messages.Status_Code;
         begin
             Put_Line ("Should proxy " & URL);
 
             Result := AWS.Client.Get (URL => URL,
-                                      Follow_Redirection => True);
+                                      Follow_Redirection => False);
+            Response_Code := AWS.Response.Status_Code (Result);
 
-            declare
-                Buf : constant String := AWS.Response.Message_Body (Result);
-                Code : constant AWS.Messages.Status_Code := AWS.Response.Status_Code (Result);
-            begin
-                Put_Line ("Status: " & AWS.Messages.Image (Code));
+            Put_Line ("Status: " & AWS.Messages.Image (Response_Code));
 
-                return AWS.Response.Build (AWS.Response.Content_Type (Result),
-                                           Buf);
-            end;
+            case Response_Code is
+
+                -- Handle passing back redirections
+                when AWS.Messages.S300 .. AWS.Messages.S307 =>
+                    if Response_Code = AWS.Messages.S301 then
+                        return AWS.Response.Moved (AWS.Response.Location (Result));
+                    else
+                        return AWS.Response.URL (AWS.Response.Location (Result));
+                    end if;
+
+                -- Everything else we can slowly proxy
+                when others =>
+                    declare
+                        Buf : constant String := AWS.Response.Message_Body (Result);
+                    begin
+                        return AWS.Response.Build (Content_Type => AWS.Response.Content_Type (Result),
+                                                   Message_Body => Buf,
+                                                   Status_Code  => Response_Code);
+                    end;
+            end case;
         end Request_Upstream;
 
-        return AWS.Response.Build ("text/html",  "Failed to proxy");
+        return AWS.Response.Build (Content_Type => "text/html", 
+                                   Message_Body => "Failed to proxy",
+                                   Status_Code  => AWS.Messages.S500);
     end Simple;
 end Callbacks;
