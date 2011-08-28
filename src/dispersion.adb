@@ -20,7 +20,7 @@ begin
 
     AWS.Server.Start (Web_Server     => Server,
                       Name           => "Dispersion Proxy",
-                      Max_Connection => 2,
+                      Max_Connection => 10,
                       Port           => 8980,
                       Callback       => Callbacks.Simple'Access);
 
