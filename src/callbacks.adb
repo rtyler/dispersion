@@ -3,8 +3,13 @@ private with Ada.Streams,
              AWS.Client,
              AWS.Headers,
              AWS.Messages,
+             AWS.Resources,
+             AWS.Resources.Streams,
              AWS.Response,
-             AWS.Status;
+             AWS.Status,
+             AWS.Translator;
+
+with Delayed_Stream;
 
 package body Callbacks is
     use Ada.Text_IO;
@@ -58,10 +63,16 @@ package body Callbacks is
                 -- Everything else we can slowly proxy
                 when others =>
                     declare
-                        Buf : constant String := AWS.Response.Message_Body (Result);
+                        Response_Stream : AWS.Resources.Streams.Stream_Access := new Delayed_Stream.Delayed;
                     begin
-                        return AWS.Response.Build (Content_Type => AWS.Response.Content_Type (Result),
-                                                   Message_Body => Buf,
+                        Delayed_Stream.Create (Resource => Response_Stream.all,
+                                               Response => Result,
+                                               Size     => 0,
+                                               Undefined_Size => True);
+
+
+                        return AWS.Response.Stream (Content_Type => AWS.Response.Content_Type (Result),
+                                                    Handle       => Response_Stream,
                                                    Status_Code  => Response_Code);
                     end;
             end case;
